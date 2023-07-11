@@ -1,0 +1,50 @@
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getAuth, onAuthStateChanged, type User } from "firebase/auth";
+import { getStorage } from "firebase/storage";
+import { writable } from "svelte/store";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyD9FT6HU-yY1TZRAOLpMIF6Hnpdj9syjBQ",
+    authDomain: "learning-svelte-kit.firebaseapp.com",
+    projectId: "learning-svelte-kit",
+    storageBucket: "learning-svelte-kit.appspot.com",
+    messagingSenderId: "232981583270",
+    appId: "1:232981583270:web:cb6e4519c01da648592b67",
+    measurementId: "G-29WTH1WHZ7"
+};
+
+// Initialize Firebase
+export const app = initializeApp(firebaseConfig);
+export const db = getFirestore();
+export const auth = getAuth();
+export const storage = getStorage();
+
+/**
+ * @returns a store with the current firebase user
+ */
+function userStore() {
+    let unsubscribe: () => void;
+  
+    if (!auth || !globalThis.window) {
+      console.warn('Auth is not initialized or not in browser');
+      const { subscribe } = writable<User | null>(null);
+      return {
+        subscribe,
+      }
+    }
+  
+    const { subscribe } = writable(auth?.currentUser ?? null, (set) => {
+      unsubscribe = onAuthStateChanged(auth, (user) => {
+        set(user);
+      });
+  
+      return () => unsubscribe();
+    });
+  
+    return {
+      subscribe,
+    };
+  }
+  
+  export const user = userStore();
